@@ -1,7 +1,7 @@
 All thanks to https://github.com/python-escpos/python-escpos for python POS driver implementation
 
 Why copy this library sources to project?  
-
-Fixed USB connection for 58mm POS printer (it is likely QR701) on Windows by removing extra-checks on lines 61-71 in printer.py
+* Fixed USB connection for 58mm POS printer (it is likely QR701) on Windows by removing extra-checks on lines 61-71 in printer.py
+* Cyrillic codepages and text does not print with newer versions of library (>2.2.0)
 
 If better solution will be found, PR to original repo will be created
