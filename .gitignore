@@ -1,3 +1,9 @@
+# Logs
+pyqt-escpos.log
+
+# User files
+swm.gif
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
