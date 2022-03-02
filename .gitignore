@@ -2,6 +2,7 @@
 pyqt-escpos.log
 
 # User files
+.vscode/
 swm.gif
 
 # Byte-compiled / optimized / DLL files

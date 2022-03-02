@@ -12,8 +12,8 @@ from PyQt5.QtGui import (
 )
 from PyQt5.QtWidgets import (
     QAction, QApplication, QDesktopWidget, QDialog, QFileDialog, QStackedWidget, 
-    QHBoxLayout, QFormLayout, QLabel, QMainWindow, QToolBar, QVBoxLayout, QWidget, 
-    QComboBox, QLineEdit, QCheckBox, QPushButton, QMessageBox
+    QHBoxLayout, QVBoxLayout, QGridLayout, QFormLayout, QLabel, QMainWindow, QToolBar,
+    QWidget, QComboBox, QLineEdit, QCheckBox, QPushButton, QMessageBox
 )
 
 from printer import (
@@ -21,11 +21,15 @@ from printer import (
     PrinterBuilder, Printer
 )
 
+from gui.rightbar import RightBar
+from gui.tabs import Tabs
+
 
 logger = logging.getLogger(__name__)
 
 
 class Resources(object):
+    """ Resources importlib loader """
     def __init__(self) -> None:
         logger.info("Resources - start")
 
@@ -38,6 +42,7 @@ class Resources(object):
 
 class MainApp(QApplication):
     """ QApplication with styling. """
+
     def __init__(self, argv: typing.List[str]) -> None:
         super(MainApp, self).__init__(argv)
         self.set_style()
@@ -71,11 +76,12 @@ class MainWindow(QMainWindow):
         self.driver = None
 
         self.configDialog = ConfigDialog()
+        self.configDialog.signalConfigured.connect(lambda driver: self.config_dialog_slot(driver))
         self.configDialog.exec_()
 
-        if self.driver:
+        if self.driver is not None:
             self.printer = Printer(self.driver)
-            logger.error(f"Printer has loaded with driver {self.driver}")
+            logger.info(f"Printer has loaded with driver {self.driver}")
         else:
             logger.error("No valid driver was provided, exiting...")
             QApplication.quit()
@@ -86,20 +92,26 @@ class MainWindow(QMainWindow):
         self.setWindowIcon(self.res.favicon)
         
         self.widget = QWidget()
-        self.layout = QHBoxLayout(self.widget)
+        self.setCentralWidget(self.widget)
 
-        self.menu_bar = self.menuBar()
+        layout = QGridLayout()
+
+        self.bar = RightBar(self.printer, parent=self.widget)
+        self.tabs = Tabs(self.printer, self.bar.add_to_queue, parent=self.widget)
+
+        layout.addWidget(self.tabs, 0, 0)
+        layout.addWidget(self.bar, 0, 1)
+        layout.setColumnStretch(0, 2)
+        layout.setColumnStretch(1, 1)
+        self.widget.setLayout(layout)
         
-
-        self.status_bar = self.statusBar()
-        self.status_bar.showMessage(f"Ready via {self.driver}", 5000)
-
-        self.file_menu()
-        self.help_menu()
+        self.status = self.statusBar()
+        self.status.showMessage(f"Ready with {self.driver}", 3000)
 
     @pyqtSlot()
     def config_dialog_slot(self, driver):
         self.driver = driver
+        # logger.debug(f"{self.driver} {type(self.driver)}")
 
     def open_file(self):
         """Open a QFileDialog to allow the user to open a file into the application."""
@@ -162,7 +174,8 @@ class ConfigDialog(QDialog):
         isSuccess = self.printer.build(conn, **kwargs)
         if isSuccess == True:
             logger.info("Connection success, configuration complete.")
-            signalConfigured.emit(self.printer.get())
+            self.signalConfigured.emit(self.printer.get())
+            self.accept() # closing window
         else:
             self.show_alert(f"Failed to connect with {conn}! Double check you configuration!")
 
@@ -184,11 +197,11 @@ class ConfigDialog(QDialog):
         usbValidator = QRegExpValidator(QRegExp("0x[0-9A-Fa-f]{4}"))
         timeoutValidator = QRegExpValidator(QRegExp("[0-9]+"))
 
-        vid = QLineEdit("0x0000")
+        vid = QLineEdit("0x28E9")
         vid.setValidator(usbValidator)
         layout.addRow("VID", vid)
 
-        pid = QLineEdit("0x0000")
+        pid = QLineEdit("0x0289")
         pid.setValidator(usbValidator)
         layout.addRow("PID", pid)
 

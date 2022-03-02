@@ -20,19 +20,21 @@ class PrinterBuilder(object):
     def build(self, printer_type: str, **kwargs) -> bool:
         result = False
         if printer_type in PRINTER_TYPES:
-            try:
+            # try:
                 if printer_type == "USB":
-                    vid = int(kwargs.get("vid"))
-                    pid = int(kwargs.get("pid"))
+                    vid = int(kwargs.get("vid"), 16)
+                    pid = int(kwargs.get("pid"), 16)
                     timeout = int(kwargs.get("timeout"))
-                    
+
                     self.printer = Usb(vid, pid, timeout=timeout)
+                    return True
                 elif printer_type == "Network":
                     host = str(kwargs.get("host"))
                     port = int(kwargs.get("port"))
                     timeout = int(kwargs.get("timeout"))
                     
                     self.printer = Network(host, port=port, timeout=timeout)
+                    return True
                 elif printer_type == "Serial":
                     port        = str(kwargs.get("port"))
                     baudrate    = int(kwargs.get("baudrate"))
@@ -47,13 +49,15 @@ class PrinterBuilder(object):
                         port, baudrate=baudrate, bytesize=bytesize, timeout=timeout,
                         parity=parity, stopbits=stopbits, xonxoff=xonoff, dsrdtr=dsrdtr
                     )
+                    return True
                 elif printer_type == "File":
                     file = kwargs.get("file")
                     flush = kwargs.get("flush")
                     
-                    self.printer = File(file, auto_flush=flush)        
-            except:
-                logger.error(f"Failed to build with type <{printer_type}>")        
+                    self.printer = File(file, auto_flush=flush)    
+                    return True    
+            # except:
+                # logger.error(f"Failed to build with type <{printer_type}>")        
         else:
             logger.error("Unknow printer type") 
         return result           
@@ -65,6 +69,9 @@ class PrinterBuilder(object):
 class Printer(object):
     def __init__(self, driver) -> None:
         self.printer = driver
+        self.buf = Dummy()
+
+    def make_new_buffer(self) -> None:
         self.buf = Dummy()
 
     def text(self, text) -> None:
@@ -90,14 +97,15 @@ class Printer(object):
         self.buf.cut()
 
     def line_spacing(self, spacing=None, divisor=180) -> None:
+        logger.warning("line_spacing() not implementeed!")
         self.buf.line_spacing(spacing, divisor)
 
     def set(self, align='left', font='a', text_type='normal', width=1, height=1,
         density=9, invert=False, smooth=False, flip=False) -> None:
-        self.printer.set(align, font, text_type, width, height, density, invert, smooth, flip)
+        self.buf.set(align, font, text_type, width, height, density, invert, smooth, flip)
 
     def charset(self, charset: str):
-        self.printer.charcode(charset)
+        self.buf.charcode(charset)
 
     def output(self) -> None:
         #print(str(self.buf.output))
@@ -110,17 +118,11 @@ if __name__ == "__main__":
     VID = 0x28E9
     PID = 0x0289
 
-    p = Printer(VID, PID)
+    p = Printer(Usb(VID, PID))
 
-    # p.set(align='center', text_type="B", width=4, height=4, smooth=True)
-    # p.textline("ПАНЕЛЬКИ")
-    # p.textline("-------")
-    # p.textline("ECNHv3")
-
-    p.set(align='center', text_type="NORMAL", width=2, height=2)
-    p.textline("Xiamen QR-701")
-    p.textline("TTL 9600 & USB")
-    p.textline("python-ecspos")
-    p.textline("ver. 2.2.0")
+    p.set(align='center', text_type="NORMAL", width=1, height=1)
+    # p.textline("python-ecspos")
+    # p.textline("ver. 2.2.0")
+    # p.barcode('1324354657687', 'EAN13', 64, 2, '', '')
  
     p.output()
