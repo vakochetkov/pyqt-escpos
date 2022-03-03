@@ -104,22 +104,11 @@ class MainWindow(QMainWindow):
         layout.setColumnStretch(0, 2)
         layout.setColumnStretch(1, 1)
         self.widget.setLayout(layout)
-        
-        self.status = self.statusBar()
-        self.status.showMessage(f"Ready with {self.driver}", 3000)
 
     @pyqtSlot()
     def config_dialog_slot(self, driver):
         self.driver = driver
         # logger.debug(f"{self.driver} {type(self.driver)}")
-
-    def open_file(self):
-        """Open a QFileDialog to allow the user to open a file into the application."""
-        filename, accepted = QFileDialog.getOpenFileName(self, 'Open File')
-
-        if accepted:
-            with open(filename) as file:
-                file.read()
 
 
 class ConfigDialog(QDialog):

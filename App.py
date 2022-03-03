@@ -17,4 +17,4 @@ if __name__ == "__main__":
     logger.info("Starting application...")
     from gui import application
     application.main()
-    logger.info("Exiting application...")
+    logger.info("Ooops, how do we got here...")

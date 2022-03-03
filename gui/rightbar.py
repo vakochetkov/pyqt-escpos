@@ -31,7 +31,7 @@ class RightBar(QWidget):
         self.layout.addWidget(self.btnCut)
 
         btnLayout = QHBoxLayout()
-        self.btnPrint = QPushButton("Print")
+        self.btnPrint = QPushButton("Send to printer")
         self.btnPrint.clicked.connect(self.__print_handler)
         btnLayout.addWidget(self.btnPrint)
 

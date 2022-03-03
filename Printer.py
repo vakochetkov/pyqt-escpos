@@ -20,7 +20,7 @@ class PrinterBuilder(object):
     def build(self, printer_type: str, **kwargs) -> bool:
         result = False
         if printer_type in PRINTER_TYPES:
-            # try:
+            try:
                 if printer_type == "USB":
                     vid = int(kwargs.get("vid"), 16)
                     pid = int(kwargs.get("pid"), 16)
@@ -56,8 +56,8 @@ class PrinterBuilder(object):
                     
                     self.printer = File(file, auto_flush=flush)    
                     return True    
-            # except:
-                # logger.error(f"Failed to build with type <{printer_type}>")        
+            except:
+                logger.error(f"Failed to build with type <{printer_type}>")        
         else:
             logger.error("Unknow printer type") 
         return result           
