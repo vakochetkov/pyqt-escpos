@@ -67,6 +67,8 @@ class PrinterBuilder(object):
 
 
 class Printer(object):
+    """ Wrapper around python-escpos """
+
     def __init__(self, driver) -> None:
         self.printer = driver
         self.buf = Dummy()
@@ -110,19 +112,3 @@ class Printer(object):
     def output(self) -> None:
         #print(str(self.buf.output))
         self.printer._raw(self.buf.output)
-
-
-if __name__ == "__main__":
-    print("Test Printer.py\n" + "=" * 20)
-    # USB id for QR701
-    VID = 0x28E9
-    PID = 0x0289
-
-    p = Printer(Usb(VID, PID))
-
-    p.set(align='center', text_type="NORMAL", width=1, height=1)
-    # p.textline("python-ecspos")
-    # p.textline("ver. 2.2.0")
-    # p.barcode('1324354657687', 'EAN13', 64, 2, '', '')
- 
-    p.output()

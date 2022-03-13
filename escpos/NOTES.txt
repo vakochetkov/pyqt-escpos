@@ -2,6 +2,6 @@ All thanks to https://github.com/python-escpos/python-escpos for python POS driv
 
 Why copy this library sources to project?  
 * Fixed USB connection for chinese embedded 58mm (actually 57.5mm) POS printer (it is likely Xiamen QR701) on Windows by removing extra-checks on lines 61-71 in escpos/printer.py
-* Cyrillic codepages and text are not correctly encoded and not printed with newer versions of library (>2.2.0)
+* Cyrillic codepages and text are not correctly encoded and not printed with newer versions of library (>=3)
 
 If better solution will be found, PR to original repo will be created

@@ -1,7 +1,7 @@
 import typing
 import os.path
 
-from PyQt5.QtCore import QRegExp
+from PyQt5.QtCore import QRegExp, Qt
 from PyQt5.QtGui import QRegExpValidator
 
 from PyQt5.QtWidgets import (
@@ -45,7 +45,7 @@ class Tabs(QTabWidget):
 
         printMultiLine = lambda: (
             self.printer.text(str(pteText.toPlainText())),
-            self.addTo(f"Text <{pteText.toPlainText()}...>")
+            self.addTo(f"Text <{pteText.toPlainText()}>")
         )
 
         pteText = QPlainTextEdit("Multiple\nlines\nto\nprint\n")
@@ -64,7 +64,7 @@ class Tabs(QTabWidget):
 
         printBlockText = lambda: (
             self.printer.block_text(str(pteText.toPlainText()), int(leTextColumns.text())),
-            self.addTo(f"Block text <{leTextColumns.text()}> <{pteText.toPlainText()}>...")
+            self.addTo(f"Block text <{leTextColumns.text()}> <{pteText.toPlainText()}>")
         )
 
         btnBlockText = QPushButton("Print in specified columns")
@@ -178,28 +178,161 @@ class Tabs(QTabWidget):
 
         layout.addWidget(leImagePath, 0, 0, 1, 3) 
         layout.addWidget(btnImageSelect, 0, 3, 1, 1)
-        #     def open_file(self):
-        # """Open a QFileDialog to allow the user to open a file into the application."""
-        # filename, accepted = QFileDialog.getOpenFileName(self, 'Open File')
 
-        # if accepted:
-        #     with open(filename) as file:
-        #         file.read()
+        lblHighDensity = QLabel("High density")
+        cbVertical = QCheckBox("Vertical")
+        cbVertical.setChecked(True)
+        cbHorizontal = QCheckBox("Horizontal")
+        cbHorizontal.setChecked(True)
+        layout.addWidget(lblHighDensity, 1, 0, 1, 1) 
+        layout.addWidget(cbVertical, 1, 1, 1, 1) 
+        layout.addWidget(cbHorizontal, 1, 2, 1, 1) 
+
+        lblFragmentHeight = QLabel("Fragment height")
+        leFragmentHeight = QLineEdit("1024")
+        decimalValidator = QRegExpValidator(QRegExp("[0-9]+"))
+        leFragmentHeight.setValidator(decimalValidator)
+        layout.addWidget(lblFragmentHeight, 2, 0, 1, 1) 
+        layout.addWidget(leFragmentHeight, 2, 1, 1, 1) 
+
+        btnImagePrint = QPushButton("Print")
+        layout.addWidget(btnImagePrint, 2, 2, 1, 1) 
+
+        printImage = lambda: self.__printImage(
+            leImagePath.text(),
+            highDensityVertical=cbVertical.isChecked(),
+            highDensityHorizontal=cbHorizontal.isChecked(),
+            fragmentHeight=leFragmentHeight.text()
+        )
+        btnImagePrint.clicked.connect(printImage)
+
+        layout.setAlignment(Qt.AlignTop)
+        w.setLayout(layout)
+        return w
+
+    def __printImage(self, path: str, highDensityVertical: bool, highDensityHorizontal: bool,
+                    fragmentHeight: int):
+        if os.path.isfile(path):
+            self.printer.image(
+                path, 
+                high_density_vertical=bool(highDensityVertical), 
+                high_density_horizontal=bool(highDensityHorizontal), 
+                fragment_height=int(fragmentHeight)
+            )
+            self.addTo(f"Image {path}")
+        else:
+           self.__showError("Image path is not a file!")           
+
+    def __openImage(self) -> str:
+        path, accepted = QFileDialog.getOpenFileName(self, 'Open image')
+        if accepted:
+            return os.path.abspath(path)
+        else:
+            self.__showError("No path selected")
+            return ""
+
+    def __showError(self, error: str) -> None:
+        mb = QMessageBox()
+        mb.setIcon(QMessageBox.Icon.Error)
+        mb.setWindowTitle("Error")
+        mb.setText(f"{msg}")
+        mb.setStandardButtons(QMessageBox.Ok)
+        mb.exec_()
+
+    def __buildTabQR(self) -> QWidget:
+        ecMap = {"L": 0, "M": 1, "Q": 2, "H": 3}
+        modelMap = {"1": 1, "2": 2, "MICRO": 3}
+
+        w = QWidget()
+        layout = QFormLayout()
+
+        leContent = QLineEdit("123456789")
+        layout.addRow("QR content", leContent)
+
+        cmbErrorCorrection = QComboBox()
+        cmbErrorCorrection.addItems(list(ecMap.keys()))
+        layout.addRow("Error correction", cmbErrorCorrection)
+
+        cmbModel = QComboBox()
+        cmbModel.addItems(list(modelMap.keys()))
+        cmbModel.setCurrentIndex(2 - 1)
+        layout.addRow("Code model", cmbModel)
+
+        cmbSize = QComboBox()
+        cmbSize.addItems(map(str, range(1,17)))
+        cmbSize.setCurrentIndex(3 - 1)
+        layout.addRow("Size", cmbSize)
+
+        btnPrint = QPushButton("Print")
+        layout.addRow(btnPrint)
+
+        printQR = lambda: (
+            self.printer.qr(
+                leContent.text(),
+                ec=int(ecMap[cmbErrorCorrection.currentText()]),
+                model=int(modelMap[cmbModel.currentText()]),
+                size=int(cmbSize.currentText())
+            ),
+            self.addTo(f"QR {leContent.text()}")
+        )
+        btnPrint.clicked.connect(printQR)
 
         w.setLayout(layout)
         return w
 
-    def __openImage(self) -> str:
-        path, accepted = QFileDialog.getOpenFileName(self, 'Open image')
-        # if accepted:
-        #     try:
-        #         self.printer.image()
-        return os.path.abspath(path)
-
-    def __buildTabQR(self) -> QWidget:
-        w = QWidget()
-        return w
-
     def __buildTabBarcode(self) -> QWidget:
         w = QWidget()
+        layout = QFormLayout()
+
+        leContent = QLineEdit("123456789")
+        layout.addRow("Barcode content", leContent)
+
+        cmbFormat = QComboBox()
+        cmbFormat.addItems([
+            "UPC-A", "UPC-E", "EAN13", "EAN8", "CODE39", "ITF", "NW7", "CODE93", "CODE128"
+        ]) # NW7 is not supported by QR701
+        layout.addRow("Format", cmbFormat)
+
+        cmbHeight = QComboBox()
+        cmbHeight.addItems(map(str, range(1,256))) # default 64
+        cmbHeight.setCurrentIndex(64 - 1)
+        layout.addRow("Height", cmbHeight)
+
+        cmbWidth = QComboBox()
+        cmbWidth.addItems(map(str, range(2,7))) # default 3
+        cmbWidth.setCurrentIndex(3 - 2)
+        layout.addRow("Width", cmbWidth)
+
+        cmbPos = QComboBox()
+        cmbPos.addItems([
+            "BELOW", "ABOVE", "BOTH", "OFF"
+        ]) # default BELOW
+        layout.addRow("Pos", cmbPos)
+
+        cmbFont = QComboBox()
+        cmbFont.addItems(["A", "B"]) # default A
+        layout.addRow("Font", cmbFont)
+
+        cbAlignCenter = QCheckBox()
+        cbAlignCenter.setChecked(True)
+        layout.addRow("Align center", cbAlignCenter)
+
+        btnPrint = QPushButton("Print")
+        layout.addRow(btnPrint)
+
+        printBarcode = lambda: (
+            self.printer.barcode(
+                leContent.text(),
+                cmbFormat.currentText(),
+                height=int(cmbHeight.currentText()),
+                width=int(cmbWidth.currentText()),
+                pos=str(cmbPos.currentText()),
+                font=str(cmbFont.currentText()),
+                align_ct=bool(cbAlignCenter.isChecked())
+            ),
+            self.addTo(f"Barcode {cmbFormat.currentText()} {leContent.text()}")
+        )
+        btnPrint.clicked.connect(printBarcode)
+
+        w.setLayout(layout)
         return w
